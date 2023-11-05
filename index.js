@@ -43,6 +43,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const foodcollection = client.db("food").collection("fooddata");
+    const usercollection = client.db("food").collection("userdata");
    
     // add new product to database
     app.post('/newfood', async (req, res) => {
@@ -52,6 +53,32 @@ async function run() {
       res.send(result)
     })
    
+    // add new user to database
+    app.post('/users', async (req, res) => {
+      const user = req.body
+      console.log(user)
+      const result = await usercollection.insertOne(user);
+      res.send(result)
+    })
+
+     // update userdata
+     app.patch('/users', async (req, res) => {
+
+      const user = req.body
+      const query = {
+        email: user.email
+      }
+
+      const updateuserdb = {
+        $set: {
+          lastloggedat: user.lastloggedat
+        },
+      };
+      // Update the first document that matches the filter
+      const result = await usercollection.updateOne(query, updateuserdb);
+      res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({
     //   ping: 1
