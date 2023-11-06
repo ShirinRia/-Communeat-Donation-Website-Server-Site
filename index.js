@@ -129,10 +129,22 @@ async function run() {
       let query = {}
       if (req.query?.email) {
         query = {
-          email: req.query.email
+          donar_email: req.query.email
         }
       }
+      console.log(query)
       const result = await foodcollection.find(query).toArray();
+      res.send(result)
+    })
+
+    // delete data from table
+    app.delete('/table/:id', async (req, res) => {
+      const id = req.params.id
+      console.log('cartid', id)
+      const query = {
+        _id:new ObjectId(id)
+      }
+      const result = await foodcollection.deleteOne(query)
       res.send(result)
     })
     // Send a ping to confirm a successful connection
