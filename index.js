@@ -45,6 +45,7 @@ async function run() {
     // await client.connect();
     const foodcollection = client.db("food").collection("fooddata");
     const usercollection = client.db("food").collection("userdata");
+    const requestedfoodcollection = client.db("food").collection("requestedfooddata");
     // JWT Authorization
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -75,6 +76,13 @@ async function run() {
       const newfood = req.body
       console.log(newfood)
       const result = await foodcollection.insertOne(newfood);
+      res.send(result)
+    })
+    // add requested food to database
+    app.post('/requestedfood', async (req, res) => {
+      const newfood = req.body
+      console.log(newfood)
+      const result = await requestedfoodcollection.insertOne(newfood);
       res.send(result)
     })
 
@@ -123,6 +131,19 @@ async function run() {
 
       res.send(result)
     })
+    // get specific id data from mongodb
+    app.get("/manage/:id", async (req, res) => {
+
+      const id = req.params.id
+      console.log(id)
+      const query = {
+
+        foodid: id
+      }
+      const result = await requestedfoodcollection.find(query).toArray()
+console.log(result)
+      res.send(result)
+    })
     // get specific user food
     app.get('/userfood', async (req, res) => {
 
@@ -136,6 +157,19 @@ async function run() {
       const result = await foodcollection.find(query).toArray();
       res.send(result)
     })
+    // get specific user requestedfood
+    app.get('/requestedfood', async (req, res) => {
+
+      let query = {}
+      if (req.query?.email) {
+        query = {
+          Requester_email: req.query.email
+        }
+      }
+      console.log(query)
+      const result = await requestedfoodcollection.find(query).toArray();
+      res.send(result)
+    })
 
     // delete data from table
     app.delete('/table/:id', async (req, res) => {
@@ -147,11 +181,60 @@ async function run() {
       const result = await foodcollection.deleteOne(query)
       res.send(result)
     })
-    // Send a ping to confirm a successful connection
-    // await client.db("admin").command({
-    //   ping: 1
-    // });
-    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+    // delete data from request
+    app.delete('/requestedfood/:id', async (req, res) => {
+      const id = req.params.id
+      console.log('cartid', id)
+      const query = {
+        _id:new ObjectId(id)
+      }
+      const result = await requestedfoodcollection.deleteOne(query)
+      res.send(result)
+    })
+
+    // update food
+    app.put('/updatefood', async (req, res) => {
+
+      let query = {}
+      if (req.query?.id) {
+        query = {
+         _id: new ObjectId(req.query.id)
+        }
+      }
+      // const query = {
+      //   BrandName: brand,
+      //   _id: new ObjectId(id)
+      // }
+
+      const options = {
+        upsert: true
+      };
+    
+      const updateproduct = req.body
+      console.log(updateproduct)
+      const updateproductdoc = {
+        $set: {
+     
+          foodname : updateproduct.foodname,
+          quantity : updateproduct.quantity,
+          address : updateproduct.address,
+          status : updateproduct.status,
+          expiredate : updateproduct.expiredate,
+          note : updateproduct.note,
+          image : updateproduct.image,
+          donar_name : updateproduct.donar_name,
+          donar_email : updateproduct.donar_email,
+          donar_image : updateproduct.donar_image
+        
+        },
+      };
+
+      // Update the first document that matches the filter
+      const result = await foodcollection.updateOne(query, updateproductdoc, options);
+      res.send(result)
+    })
+    
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
