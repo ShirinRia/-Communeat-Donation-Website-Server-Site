@@ -1,22 +1,23 @@
-// var jwt = require('jsonwebtoken');
+
 const {
   MongoClient,
   ServerApiVersion,
   ObjectId
 } = require('mongodb');
+var jwt = require('jsonwebtoken');
 const express = require('express')
 var cors = require('cors')
 require('dotenv').config()
 var app = express()
-
+var cookieParser = require('cookie-parser')
 // app.use(cors())
 app.use(cors({
-  origin: ['http://localhost:5173'],
-  // origin: '*',
-  credentials: true
-  // optionSuccessStatus: 200
-}
-// corsOptions
+    origin: ['http://localhost:5173'],
+
+    credentials: true
+
+  }
+
 ))
 app.use(express.json())
 const port = process.env.PORT || 5000
@@ -44,7 +45,31 @@ async function run() {
     // await client.connect();
     const foodcollection = client.db("food").collection("fooddata");
     const usercollection = client.db("food").collection("userdata");
-   
+    // JWT Authorization
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      // console.log(process.env.ACCESS_TOKEN_SECRET)
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '1h'
+      })
+
+      res
+        .cookie('token', token, {
+          
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        })
+        .send({
+          success: true
+        })
+    })
+    // token remove when logout
+    app.post('/logout', async (req, res) => {
+      const user = req.body;
+      console.log('logging out', user);
+      res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+  })
     // add new product to database
     app.post('/newfood', async (req, res) => {
       const newfood = req.body
@@ -52,7 +77,7 @@ async function run() {
       const result = await foodcollection.insertOne(newfood);
       res.send(result)
     })
-   
+
     // add new user to database
     app.post('/users', async (req, res) => {
       const user = req.body
@@ -61,8 +86,8 @@ async function run() {
       res.send(result)
     })
 
-     // update userdata
-     app.patch('/users', async (req, res) => {
+    // update userdata
+    app.patch('/users', async (req, res) => {
 
       const user = req.body
       const query = {
@@ -79,6 +104,37 @@ async function run() {
       res.send(result)
     })
 
+    // get all foods from database
+    app.get('/foods', async (req, res) => {
+      const cursor = foodcollection.find();
+      const result = await cursor.toArray();
+      res.send(result)
+    })
+
+    // get specific id data from mongodb
+    app.get("/singlefood/:id", async (req, res) => {
+
+      const id = req.params.id
+      const query = {
+
+        _id: new ObjectId(id)
+      }
+      const result = await foodcollection.findOne(query)
+
+      res.send(result)
+    })
+    // get specific user food
+    app.get('/userfood', async (req, res) => {
+
+      let query = {}
+      if (req.query?.email) {
+        query = {
+          email: req.query.email
+        }
+      }
+      const result = await foodcollection.find(query).toArray();
+      res.send(result)
+    })
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({
     //   ping: 1
