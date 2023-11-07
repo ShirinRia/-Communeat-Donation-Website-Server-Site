@@ -1,4 +1,3 @@
-
 const {
   MongoClient,
   ServerApiVersion,
@@ -56,7 +55,7 @@ async function run() {
 
       res
         .cookie('token', token, {
-          
+
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
@@ -69,8 +68,12 @@ async function run() {
     app.post('/logout', async (req, res) => {
       const user = req.body;
       console.log('logging out', user);
-      res.clearCookie('token', { maxAge: 0 }).send({ success: true })
-  })
+      res.clearCookie('token', {
+        maxAge: 0
+      }).send({
+        success: true
+      })
+    })
     // add new product to database
     app.post('/newfood', async (req, res) => {
       const newfood = req.body
@@ -112,6 +115,25 @@ async function run() {
       res.send(result)
     })
 
+    // update reqested food status
+    app.patch('/requestedfood', async (req, res) => {
+
+      const update = req.body
+      console.log(req.body)
+      const query = {
+        _id: new ObjectId(update._id)
+      }
+
+      const updateuserdb = {
+        $set: {
+          status: update.newstatus
+        },
+      };
+      // Update the first document that matches the filter
+      const result = await requestedfoodcollection.updateOne(query, updateuserdb);
+      res.send(result)
+    })
+
     // get all foods from database
     app.get('/foods', async (req, res) => {
       const cursor = foodcollection.find();
@@ -141,7 +163,7 @@ async function run() {
         foodid: id
       }
       const result = await requestedfoodcollection.find(query).toArray()
-console.log(result)
+      console.log(result)
       res.send(result)
     })
     // get specific user food
@@ -174,9 +196,19 @@ console.log(result)
     // delete data from table
     app.delete('/table/:id', async (req, res) => {
       const id = req.params.id
-      console.log('cartid', id)
+      
       const query = {
-        _id:new ObjectId(id)
+        _id: new ObjectId(id)
+      }
+      const result = await foodcollection.deleteOne(query)
+      res.send(result)
+    })
+    // delete data from food if sttaus is delivered
+    app.delete('/food/:id', async (req, res) => {
+      const id = req.params.id
+      
+      const query = {
+        _id: new ObjectId(id)
       }
       const result = await foodcollection.deleteOne(query)
       res.send(result)
@@ -187,7 +219,7 @@ console.log(result)
       const id = req.params.id
       console.log('cartid', id)
       const query = {
-        _id:new ObjectId(id)
+        _id: new ObjectId(id)
       }
       const result = await requestedfoodcollection.deleteOne(query)
       res.send(result)
@@ -199,7 +231,7 @@ console.log(result)
       let query = {}
       if (req.query?.id) {
         query = {
-         _id: new ObjectId(req.query.id)
+          _id: new ObjectId(req.query.id)
         }
       }
       // const query = {
@@ -210,23 +242,23 @@ console.log(result)
       const options = {
         upsert: true
       };
-    
+
       const updateproduct = req.body
       console.log(updateproduct)
       const updateproductdoc = {
         $set: {
-     
-          foodname : updateproduct.foodname,
-          quantity : updateproduct.quantity,
-          address : updateproduct.address,
-          status : updateproduct.status,
-          expiredate : updateproduct.expiredate,
-          note : updateproduct.note,
-          image : updateproduct.image,
-          donar_name : updateproduct.donar_name,
-          donar_email : updateproduct.donar_email,
-          donar_image : updateproduct.donar_image
-        
+
+          foodname: updateproduct.foodname,
+          quantity: updateproduct.quantity,
+          address: updateproduct.address,
+          status: updateproduct.status,
+          expiredate: updateproduct.expiredate,
+          note: updateproduct.note,
+          image: updateproduct.image,
+          donar_name: updateproduct.donar_name,
+          donar_email: updateproduct.donar_email,
+          donar_image: updateproduct.donar_image
+
         },
       };
 
@@ -234,7 +266,7 @@ console.log(result)
       const result = await foodcollection.updateOne(query, updateproductdoc, options);
       res.send(result)
     })
-    
+
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
