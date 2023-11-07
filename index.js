@@ -44,6 +44,7 @@ async function run() {
     // await client.connect();
     const foodcollection = client.db("food").collection("fooddata");
     const usercollection = client.db("food").collection("userdata");
+    const reviewcollection = client.db("food").collection("reviewdata");
     const requestedfoodcollection = client.db("food").collection("requestedfooddata");
     // JWT Authorization
     app.post('/jwt', async (req, res) => {
@@ -96,6 +97,13 @@ async function run() {
       const result = await usercollection.insertOne(user);
       res.send(result)
     })
+    // add new review to database
+    app.post('/newreview', async (req, res) => {
+      const review = req.body
+      console.log(review)
+      const result = await reviewcollection.insertOne(review);
+      res.send(result)
+    })
 
     // update userdata
     app.patch('/users', async (req, res) => {
@@ -137,6 +145,12 @@ async function run() {
     // get all foods from database
     app.get('/foods', async (req, res) => {
       const cursor = foodcollection.find();
+      const result = await cursor.toArray();
+      res.send(result)
+    })
+    // get all reviews from database
+    app.get('/reviews', async (req, res) => {
+      const cursor = reviewcollection.find();
       const result = await cursor.toArray();
       res.send(result)
     })
@@ -217,7 +231,7 @@ async function run() {
     // delete data from request
     app.delete('/requestedfood/:id', async (req, res) => {
       const id = req.params.id
-      console.log('cartid', id)
+      
       const query = {
         _id: new ObjectId(id)
       }
