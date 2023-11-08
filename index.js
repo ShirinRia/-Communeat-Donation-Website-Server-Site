@@ -19,6 +19,7 @@ app.use(cors({
 
 ))
 app.use(express.json())
+app.use(cookieParser())
 const port = process.env.PORT || 5000
 
 app.get('/', (req, res) => {
@@ -99,14 +100,14 @@ async function run() {
       })
     })
     // add new product to database
-    app.post('/newfood', async (req, res) => {
+    app.post('/newfood',verifytoken, async (req, res) => {
       const newfood = req.body
       console.log(newfood)
       const result = await foodcollection.insertOne(newfood);
       res.send(result)
     })
     // add requested food to database
-    app.post('/requestedfood', async (req, res) => {
+    app.post('/requestedfood',  async (req, res) => {
       const newfood = req.body
       console.log(newfood)
       const result = await requestedfoodcollection.insertOne(newfood);
@@ -179,8 +180,9 @@ async function run() {
       res.send(result)
     })
     // get all receipts from database
-    app.get('/receipt', async (req, res) => {
+    app.get('/receipt',verifytoken, async (req, res) => {
       console.log('rgrst')
+    
       const cursor = donatedmoneycollection.find();
       const result = await cursor.toArray();
       console.log(result)
@@ -219,7 +221,7 @@ async function run() {
       res.send(result)
     })
     // get specific user food
-    app.get('/userfood', async (req, res) => {
+    app.get('/userfood',verifytoken, async (req, res) => {
 
       let query = {}
       if (req.query?.email) {
@@ -232,7 +234,7 @@ async function run() {
       res.send(result)
     })
     // get specific user requestedfood
-    app.get('/requestedfood', async (req, res) => {
+    app.get('/requestedfood', verifytoken, async (req, res) => {
 
       let query = {}
       if (req.query?.email) {
