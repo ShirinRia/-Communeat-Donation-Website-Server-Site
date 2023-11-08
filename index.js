@@ -11,7 +11,7 @@ var app = express()
 var cookieParser = require('cookie-parser')
 // app.use(cors())
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://authentication-15b67.web.app', 'https://authentication-15b67.firebaseapp.com'],
 
     credentials: true
 
@@ -89,25 +89,42 @@ async function run() {
           success: true
         })
     })
-    // token remove when logout
+
+    // // token remove when logout
+    // app.post('/logout', async (req, res) => {
+    //   const user = req.body;
+    //   console.log('logging out', user);
+    //   res.clearCookie('token', {
+    //     maxAge: 0
+    //   }).send({
+    //     success: true
+    //   })
+    // })
+
+    // Logout
     app.post('/logout', async (req, res) => {
       const user = req.body;
       console.log('logging out', user);
-      res.clearCookie('token', {
-        maxAge: 0
-      }).send({
-        success: true
-      })
+      res
+        .clearCookie('token', {
+          maxAge: 0,
+          sameSite: 'none',
+          secure: true
+        })
+        .send({
+          success: true
+        })
     })
+
     // add new product to database
-    app.post('/newfood',verifytoken, async (req, res) => {
+    app.post('/newfood', verifytoken, async (req, res) => {
       const newfood = req.body
       console.log(newfood)
       const result = await foodcollection.insertOne(newfood);
       res.send(result)
     })
     // add requested food to database
-    app.post('/requestedfood',  async (req, res) => {
+    app.post('/requestedfood', async (req, res) => {
       const newfood = req.body
       console.log(newfood)
       const result = await requestedfoodcollection.insertOne(newfood);
@@ -180,10 +197,17 @@ async function run() {
       res.send(result)
     })
     // get all receipts from database
-    app.get('/receipt',verifytoken, async (req, res) => {
+    app.get('/receipt', verifytoken, async (req, res) => {
       console.log('rgrst')
-    
-      const cursor = donatedmoneycollection.find();
+
+      let query = {}
+
+      query = {
+        donar_email: req.user.email
+      }
+
+      // console.log(req.user.email)
+      const cursor = donatedmoneycollection.find(query);
       const result = await cursor.toArray();
       console.log(result)
       res.send(result)
@@ -208,6 +232,18 @@ async function run() {
       res.send(result)
     })
     // get specific id data from mongodb
+    app.get("/getmyonefood/:id", async (req, res) => {
+
+      const id = req.params.id
+      const query = {
+
+        _id: new ObjectId(id)
+      }
+      const result = await foodcollection.findOne(query)
+
+      res.send(result)
+    })
+    // get specific id data from mongodb
     app.get("/manage/:id", async (req, res) => {
 
       const id = req.params.id
@@ -221,13 +257,12 @@ async function run() {
       res.send(result)
     })
     // get specific user food
-    app.get('/userfood',verifytoken, async (req, res) => {
+    app.get('/userfood', verifytoken, async (req, res) => {
 
       let query = {}
-      if (req.query?.email) {
-        query = {
-          donar_email: req.query.email
-        }
+
+      query = {
+        donar_email: req?.user?.email
       }
       console.log(query)
       const result = await foodcollection.find(query).toArray();
@@ -237,10 +272,13 @@ async function run() {
     app.get('/requestedfood', verifytoken, async (req, res) => {
 
       let query = {}
-      if (req.query?.email) {
-        query = {
-          Requester_email: req.query.email
-        }
+      // if (req.query?.email) {
+      //   query = {
+      //     Requester_email: req.query.email
+      //   }
+      // }
+      query = {
+        Requester_email: req?.user?.email
       }
       console.log(query)
       const result = await requestedfoodcollection.find(query).toArray();
@@ -250,7 +288,7 @@ async function run() {
     // delete data from table
     app.delete('/table/:id', async (req, res) => {
       const id = req.params.id
-      
+
       const query = {
         _id: new ObjectId(id)
       }
@@ -260,7 +298,7 @@ async function run() {
     // delete data from food if sttaus is delivered
     app.delete('/food/:id', async (req, res) => {
       const id = req.params.id
-      
+
       const query = {
         _id: new ObjectId(id)
       }
@@ -271,7 +309,7 @@ async function run() {
     // delete data from request
     app.delete('/requestedfood/:id', async (req, res) => {
       const id = req.params.id
-      
+
       const query = {
         _id: new ObjectId(id)
       }
@@ -280,7 +318,7 @@ async function run() {
     })
 
     // update food
-    app.put('/updatefood', async (req, res) => {
+    app.put('/updateownfood', async (req, res) => {
 
       let query = {}
       if (req.query?.id) {
@@ -288,10 +326,6 @@ async function run() {
           _id: new ObjectId(req.query.id)
         }
       }
-      // const query = {
-      //   BrandName: brand,
-      //   _id: new ObjectId(id)
-      // }
 
       const options = {
         upsert: true
