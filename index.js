@@ -25,6 +25,28 @@ app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
+const verifytoken = async (req, res, next) => {
+  const token = req?.cookies?.token;
+  console.log('middelware', token)
+  if (!token) {
+    return res.status(401).send({
+      message: 'not authorized'
+    })
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({
+        message: 'not authorized'
+      })
+    }
+    console.log('decode value', decoded);
+    req.user = decoded
+    next();
+  })
+
+
+}
+
 USERNAME = process.env.S3_BUCKET
 PASS = process.env.SECRET_KEY
 const uri = `mongodb+srv://${USERNAME}:${PASS}@cluster0.xrp2z6o.mongodb.net/?retryWrites=true&w=majority`;
@@ -46,6 +68,7 @@ async function run() {
     const usercollection = client.db("food").collection("userdata");
     const reviewcollection = client.db("food").collection("reviewdata");
     const requestedfoodcollection = client.db("food").collection("requestedfooddata");
+    const donatedmoneycollection = client.db("food").collection("donatedmoneydata");
     // JWT Authorization
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -87,6 +110,13 @@ async function run() {
       const newfood = req.body
       console.log(newfood)
       const result = await requestedfoodcollection.insertOne(newfood);
+      res.send(result)
+    })
+    // add donated money to database
+    app.post('/moneydonation', async (req, res) => {
+      const donatedmoney = req.body
+      console.log(donatedmoney)
+      const result = await donatedmoneycollection.insertOne(donatedmoney);
       res.send(result)
     })
 
@@ -146,6 +176,14 @@ async function run() {
     app.get('/foods', async (req, res) => {
       const cursor = foodcollection.find();
       const result = await cursor.toArray();
+      res.send(result)
+    })
+    // get all receipts from database
+    app.get('/receipt', async (req, res) => {
+      console.log('rgrst')
+      const cursor = donatedmoneycollection.find();
+      const result = await cursor.toArray();
+      console.log(result)
       res.send(result)
     })
     // get all reviews from database
