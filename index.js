@@ -11,7 +11,7 @@ var app = express()
 var cookieParser = require('cookie-parser')
 // app.use(cors())
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://authentication-15b67.web.app', 'https://authentication-15b67.firebaseapp.com'],
+    origin: ['http://localhost:5173', 'https://prismatic-faloodeh-2e211b.netlify.app', 'https://authentication-15b67.web.app', 'https://authentication-15b67.firebaseapp.com'],
 
     credentials: true
 
